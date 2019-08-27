@@ -29,6 +29,9 @@ class Word:
         else:
             return False
 
+    def __repr__(self):
+        return "Word({})".format(self.spelling)
+
 def adjectiveEquality(spelling1, spelling2):
     """Compare to (potential) adjectives for equality by removing the plural and feminine/male endings and comparing the 'base words'
     # >>> adjectiveEquality("rojos", "rojas")
@@ -40,11 +43,8 @@ def adjectiveEquality(spelling1, spelling2):
     # >>> adjectiveEquality("roja", "azul")
     # False
     """
-    print(stripAdjectiveEndings(spelling1), stripAdjectiveEndings(spelling2))
-    if stripAdjectiveEndings(spelling1) == stripAdjectiveEndings(spelling2):
-        print(stripAdjectiveEndings(spelling1))
-        print(stripAdjectiveEndings(spelling2))
-        print(spelling1, spelling2)
+    if len(spelling1) > 3 and spelling1[:2] != spelling2[:2]:
+        return False
     return stripAdjectiveEndings(spelling1) == stripAdjectiveEndings(spelling2)
 
 def nounEquality(spelling1, spelling2):
@@ -78,9 +78,19 @@ class Vocabulary:
 def getWords(text):
     return (Word(word.lower()) for word in re.findall("[\w]+", text))
 
+def unique(items):
+    """Return unique words, that is, remove those that are equal to each other. This replaces just calling set(items) 
+    since Word is not a hashable type (and it is really hard to construct a hash for it)"""
+    uniqueItems = []
+    print(len(items))
+    for item in items:
+        if not item in uniqueItems:
+            uniqueItems.append(item)
+    return uniqueItems
+
 def scanText(text, vocab):
     words = list(getWords(text))
-    return set(word for word in words if not word in vocab)
+    return unique(list(word for word in words if not word in vocab))
 
 vocab = Vocabulary("vocab")
 text = "".join(Path("text").open("r").readlines())
