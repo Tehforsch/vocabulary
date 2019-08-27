@@ -3,57 +3,42 @@ from yaml import Loader, Dumper
 from pathlib import Path
 import re
 
-# class Word:
-    # def __init__(self, word):
+verbsFile = Path("verbsSmall")
+textFile = Path("harryPotter")
+
+verbType = "verb"
+adjectiveType = "adjective"
+nounType = "noun"
+
+vocabularyFile = "vocab"
 
 class Word:
     def __init__(self, spelling):
         self.spelling = spelling
-        self.type = None
+        infinitive = getInfinitive(self.spelling)
+        if infinitive is not None:
+            self.type = verbType
+            self.baseForm = infinitive
+        else:
+            self.type = nounType
+            self.baseForm = stripNounEndings(self.spelling)
 
     def __eq__(self, word):
-        if self.spelling == word.spelling:
+        if self.type == word.type and self.baseForm == word.baseForm:
             return True
-        if self.type is not None and word.type is not None and self.type != word.type:
-            return False
-        spelling1 = self.spelling
-        spelling2 = word.spelling
-        if self.type is None:
-            return adjectiveEquality(spelling1, spelling2) or verbEquality(spelling1, spelling2) or nounEquality(spelling1, spelling2)
-        elif self.type == "adjective":
-            return adjectiveEquality(spelling1, spelling2)
-        elif self.type == "verb":
-            return verbEquality(spelling1, spelling2)
-        elif self.type == "noun":
-            return nounEquality(spelling1, spelling2)
-        else:
-            return False
+
+    def __hash__(self):
+        return (self.type, self.baseForm).__hash__()
 
     def __repr__(self):
         return "Word({})".format(self.spelling)
 
-def adjectiveEquality(spelling1, spelling2):
-    """Compare to (potential) adjectives for equality by removing the plural and feminine/male endings and comparing the 'base words'
-    # >>> adjectiveEquality("rojos", "rojas")
-    # True
-    # >>> adjectiveEquality("rojos", "roja")
-    # True
-    # >>> adjectiveEquality("largo", "largas")
-    # True
-    # >>> adjectiveEquality("roja", "azul")
-    # False
-    """
-    if len(spelling1) > 3 and spelling1[:2] != spelling2[:2]:
-        return False
-    return stripAdjectiveEndings(spelling1) == stripAdjectiveEndings(spelling2)
+def getInfinitive(spelling):
+    for verbConjugations in verbs:
+        if spelling in verbConjugations:
+            return verbConjugations[0]
 
-def nounEquality(spelling1, spelling2):
-    return adjectiveEquality(spelling1, spelling2)
-
-def verbEquality(spelling1, spelling2):
-    return False
-
-def stripAdjectiveEndings(word):
+def stripNounEndings(word):
     possibleEndings = ["o", "a", "os", "as", "e", "es"]
     for ending in possibleEndings:
         if word.endswith(ending):
@@ -78,24 +63,21 @@ class Vocabulary:
 def getWords(text):
     return (Word(word.lower()) for word in re.findall("[\w]+", text))
 
-def unique(items):
-    """Return unique words, that is, remove those that are equal to each other. This replaces just calling set(items) 
-    since Word is not a hashable type (and it is really hard to construct a hash for it)"""
-    uniqueItems = []
-    print(len(items))
-    for item in items:
-        if not item in uniqueItems:
-            uniqueItems.append(item)
-    return uniqueItems
-
 def scanText(text, vocab):
     words = list(getWords(text))
-    return unique(list(word for word in words if not word in vocab))
+    print("Read {} words".format(len(words)))
+    return list(set(list(word for word in words if not word in vocab)))
 
-vocab = Vocabulary("vocab")
-text = "".join(Path("text").open("r").readlines())
+print("Loading verbs")
+verbs = yaml.load(verbsFile.open("r"), Loader=Loader)
+
+print("Reading vocabulary")
+vocab = Vocabulary(vocabularyFile)
+
+print("Scanning text for new words")
+text = textFile.open("r").read()
 newWords = scanText(text, vocab)
-print(len(newWords))
+print("New words:", len(newWords))
 # for word in newWords:
     # print(word)
 # vocab.write()
