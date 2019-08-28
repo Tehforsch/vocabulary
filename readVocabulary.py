@@ -3,7 +3,7 @@ from yaml import Loader, Dumper
 from pathlib import Path
 import re
 
-verbsFile = Path("verbsSmall")
+verbsFile = Path("verbs")
 textFile = Path("harryPotter")
 
 verbType = "verb"
@@ -11,6 +11,15 @@ adjectiveType = "adjective"
 nounType = "noun"
 
 vocabularyFile = "vocab"
+
+def progress(items):
+    oldIndex = -1
+    for (i, item) in enumerate(items):
+        index = int(i / len(items) * 100)
+        if index > oldIndex:
+            print("{}%".format(index))
+        oldIndex = index
+        yield item
 
 class Word:
     def __init__(self, spelling):
@@ -58,10 +67,10 @@ class Vocabulary:
         return word in self.words
 
     def write(self):
-        yaml.dump(self.words, self.path.open("w"))
+        yaml.dump([w.spelling for w in self.words], self.path.open("w"))
 
 def getWords(text):
-    return (Word(word.lower()) for word in re.findall("[\w]+", text))
+    return (Word(word.lower()) for word in progress(re.findall("[\w]+", text)))
 
 def scanText(text, vocab):
     words = list(getWords(text))
@@ -78,9 +87,10 @@ print("Scanning text for new words")
 text = textFile.open("r").read()
 newWords = scanText(text, vocab)
 print("New words:", len(newWords))
-# for word in newWords:
-    # print(word)
-# vocab.write()
+for word in newWords:
+    print(word)
+vocab.words = vocab.words + newWords
+vocab.write()
 
 if __name__ == '__main__':
     import doctest
