@@ -1,16 +1,18 @@
+import sys
 import yaml
 from yaml import Loader, Dumper
 from pathlib import Path
 import re
+from collections import Counter
 
-verbsFile = Path("verbs")
-textFile = Path("harryPotter")
+verbsFile = Path("data/verbs")
+textFile = Path(sys.argv[1])
+vocabularyFile = Path("data/vocab")
 
 verbType = "verb"
 adjectiveType = "adjective"
 nounType = "noun"
 
-vocabularyFile = "vocab"
 
 def progress(items):
     oldIndex = -1
@@ -40,7 +42,10 @@ class Word:
         return (self.type, self.baseForm).__hash__()
 
     def __repr__(self):
-        return "Word({})".format(self.spelling)
+        if self.type == verbType:
+            return "Word({})".format(self.baseForm)
+        else:
+            return "Word({})".format(self.spelling)
 
 def getInfinitive(spelling):
     for verbConjugations in verbs:
@@ -56,18 +61,18 @@ def stripNounEndings(word):
         return word
 
 class Vocabulary:
-    def __init__(self, filename):
-        self.path = Path(filename)
+    def __init__(self, path):
+        self.path = path
         self.read()
 
     def read(self):
-        self.words = [Word(w) for w in yaml.load(self.path.open("r"), Loader=Loader)]
+        self.words = yaml.load(self.path.open("r"), Loader=Loader)
 
     def __contains__(self, word):
         return word in self.words
 
     def write(self):
-        yaml.dump([w.spelling for w in self.words], self.path.open("w"))
+        yaml.dump([w for w in self.words], self.path.open("w"))
 
 def getWords(text):
     return (Word(word.lower()) for word in progress(re.findall("[\w]+", text)))
@@ -77,6 +82,11 @@ def scanText(text, vocab):
     print("Read {} words".format(len(words)))
     return list(set(list(word for word in words if not word in vocab)))
 
+def getMostRepeated(text, vocab):
+    words = list(getWords(text))
+    print("Read {} words".format(len(words)))
+    return Counter((word for word in words if not word in vocab))
+
 print("Loading verbs")
 verbs = yaml.load(verbsFile.open("r"), Loader=Loader)
 
@@ -85,13 +95,15 @@ vocab = Vocabulary(vocabularyFile)
 
 print("Scanning text for new words")
 text = textFile.open("r").read()
-newWords = scanText(text, vocab)
-print("New words:", len(newWords))
-for word in newWords:
-    print(word)
-vocab.words = vocab.words + newWords
-vocab.write()
+print(getMostRepeated(text, vocab).items())
 
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
+# # newWords = scanText(text, vocab)
+# # print("New words:", len(newWords))
+# # for word in newWords:
+# #     print(word)
+# # vocab.words = vocab.words + newWords
+# # vocab.write()
+
+# if __name__ == '__main__':
+#     import doctest
+#     doctest.testmod()
