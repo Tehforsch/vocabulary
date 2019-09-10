@@ -66,7 +66,15 @@ class Vocabulary:
         self.read()
 
     def read(self):
-        self.words = yaml.load(self.path.open("r"), Loader=Loader)
+        words = yaml.load(self.path.open("r"), Loader=Loader)
+        self.words = []
+        for word in words:
+            if isinstance(word, Word):
+                self.words.append(word)
+            else:
+                assert isinstance(word, str)
+                print("Found new word: {}".format(word))
+                self.words.append(Word(word))
 
     def __contains__(self, word):
         return word in self.words
@@ -92,10 +100,11 @@ verbs = yaml.load(verbsFile.open("r"), Loader=Loader)
 
 print("Reading vocabulary")
 vocab = Vocabulary(vocabularyFile)
+vocab.write() # Write recognized words to file
 
-print("Scanning text for new words")
-text = textFile.open("r").read()
-print(getMostRepeated(text, vocab).items())
+# print("Scanning text for new words")
+# text = textFile.open("r").read()
+# print(getMostRepeated(text, vocab).items())
 
 # # newWords = scanText(text, vocab)
 # # print("New words:", len(newWords))
