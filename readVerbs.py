@@ -31,4 +31,9 @@ for f in verbDataFolder.glob("*json"):
     sortedUniqueConjugations = sorted(uniqueConjugations)
     verbs.append([infinitive] + sortedUniqueConjugations)
 
-yaml.dump(sorted(verbs, key=lambda x: x[0]), outFile.open("w"))
+verbDict = {}
+for (infinitive, *conjugations) in verbs:
+    for conjugation in [infinitive] + conjugations:
+        verbDict[conjugation] = infinitive
+
+yaml.dump(verbDict, outFile.open("w"))
