@@ -11,8 +11,6 @@ translator = Translator(from_lang="es", to_lang="en")
 verbsFile = Path("data/verbDict")
 textFile = Path(sys.argv[1])
 vocabularyFile = Path("data/vocab")
-verbs = None
-vocab = None
 
 def progress(items):
     oldIndex = -1
